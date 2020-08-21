@@ -64,8 +64,9 @@
 
     // Validate the form to ensure all fields have valid values
     function validateForm(onSuccess, onError) {
+        const formTags = ['input', 'select', 'textarea'];
         const formElements = [].filter.call(
-            $('#report-form').children(), elem => $(elem).attr('name')
+            $(formTags.map(tag => `#report-form ${tag}`).join(', ')), elem => $(elem).attr('name')
         ).reduce((dict, elem) => {
             return Object.assign({ [$(elem).attr('name')]: elem }, dict);
         }, {});
@@ -81,8 +82,17 @@
             }
         }
 
+        // Either website or comments must be filled out
+        const websiteName = 'report_website';
+        const commentName = 'report_comments';
+        const websiteValue = $(formElements[websiteName]).val();
+        const commentValue = $(formElements[commentName]).val();
+        if (!websiteValue && !commentValue) {
+            return onError(`Either ${websiteName.replace(/_/g, ' ')} or ${commentName.replace(/_/g, ' ')} must be filled out`);
+        }
+
         // Number of cases must be a positive integer
-        const newCasesName = 'number_of_new_cases';
+        const newCasesName = 'number_of_cases';
         const newCasesValue = Number.parseInt($(formElements[newCasesName]).val());
         if (Number.isNaN(newCasesValue) || newCasesValue < 0) {
             return onError(`Value for ${newCasesName.replace(/_/g, ' ')} must be a positive number`);
@@ -124,15 +134,27 @@
             <input type="date" id="date-reported" name="report_date" required />
 
             <label for="text-website">
-                <h2>Report Website*</h2>
+                <h2>Report Website</h2>
             </label>
-            <input type="url" id="text-website" name="report_website" required />
+            <input type="url" id="text-website" name="report_website" />
 
             <label for="number-cases">
-                <h2>Number of New Cases*</h2>
+                <h2>Number of Cases*</h2>
             </label>
-            <input type="number" id="number-cases" name="number_of_new_cases" min="0" required />
+            <input type="number" id="number-cases" name="number_of_cases" min="0" required />
 
+            <div class="spacer"></div>
+            <details>
+                <summary>Other comments</summary>
+                <label for="text-comments">
+                    Please fill out the following section only if you want to report something other
+                    than confirmed cases or if you have any other comments about your school. You
+                    can also send us an email at
+                    <a href="mailto:contact@thecovidmonitor.com">contact@thecovidmonitor.com</a>.
+                    We will keep your information and identity confidential.
+                </label>
+                <textarea id="text-comments" name="report_comments"></textarea>
+            </details>
             <div class="spacer"></div>
 
             <input type="button" id="submit-form" value="Submit Report"
