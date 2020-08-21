@@ -38,7 +38,7 @@
 
 
 <!-- Function definitions -->
-<script>function corsUrl(e){return`https://cors-anywhere.herokuapp.com/${e}`}function populateStates(e,t){const o={};e.forEach(e=>{o[e.STATECODE]=e.STATENAME}),t.html(['<option value="" disabled>Select State</option>'].concat(Object.keys(o).map(e=>`<option value="${e}">${o[e]}</option>`))),t.on("change",o=>{populateDistricts(e,$("#select-district"),t.val())}),t.val(null),t.removeAttr("disabled")}function populateDistricts(e,t,o){const r={};e.filter(e=>e.STATECODE===o).forEach(e=>{r[e.GEOID]=e.NAME}),t.html(['<option value="" disabled>Select School District</option>'].concat(Object.keys(r).map(e=>`<option value="${e}">${r[e]}</option>`))),t.on("change",e=>{}),t.val(null),t.removeAttr("disabled")}function disableForm(e){e.attr("disabled",1),e.val("Submitting...")}function enableForm(e){e.removeAttr("disabled"),e.val("Submit Report")}function validateForm(e,t){const o=[].filter.call($("#report-form").children(),e=>$(e).attr("name")).reduce((e,t)=>Object.assign({[$(t).attr("name")]:t},e),{}),r=Object.keys(o).reverse().filter(e=>$(o[e]).attr("required"));for(let e of r){const r=$(o[e]).val();if(null==r||""===r)return t(`Value for ${e.replace(/_/g," ")} cannot be null`)}const a=Number.parseInt($(o.number_of_new_cases).val());return Number.isNaN(a)||a<0?t(`Value for ${"number_of_new_cases".replace(/_/g," ")} must be a positive number`):e(Object.keys(o).reverse().reduce((e,t)=>Object.assign({[t]:$(o[t]).val()},e),{}))}</script>
+<script>function corsUrl(e){return`https://cors-anywhere.herokuapp.com/${e}`}function populateStates(e,t){const r={};e.forEach(e=>{r[e.STATECODE]=e.STATENAME}),t.html(['<option value="" disabled>Select State</option>'].concat(Object.keys(r).map(e=>`<option value="${e}">${r[e]}</option>`))),t.on("change",r=>{populateDistricts(e,$("#select-district"),t.val())}),t.val(null),t.removeAttr("disabled")}function populateDistricts(e,t,r){const o={};e.filter(e=>e.STATECODE===r).forEach(e=>{o[e.GEOID]=e.NAME}),t.html(['<option value="" disabled>Select School District</option>'].concat(Object.keys(o).map(e=>`<option value="${e}">${o[e]}</option>`))),t.on("change",e=>{}),t.val(null),t.removeAttr("disabled")}function disableForm(e){e.attr("disabled",1),e.val("Submitting...")}function enableForm(e){e.removeAttr("disabled"),e.val("Submit Report")}function validateForm(e,t){const r=[].filter.call($(["input","select","textarea"].map(e=>`#report-form ${e}`).join(", ")),e=>$(e).attr("name")).reduce((e,t)=>Object.assign({[$(t).attr("name")]:t},e),{}),o=Object.keys(r).reverse().filter(e=>$(r[e]).attr("required"));for(let e of o){const o=$(r[e]).val();if(null==o||""===o)return t(`Value for ${e.replace(/_/g," ")} cannot be null`)}const a=$(r.report_website).val(),n=$(r.report_comments).val();if(!a&&!n)return t(`Either ${"report_website".replace(/_/g," ")} or ${"report_comments".replace(/_/g," ")} must be filled out`);const l=Number.parseInt($(r.number_of_cases).val());return Number.isNaN(l)||l<0?t(`Value for ${"number_of_cases".replace(/_/g," ")} must be a positive number`):e(Object.keys(r).reverse().reduce((e,t)=>Object.assign({[t]:$(r[t]).val()},e),{}))}</script>
 
 </head><body>
     <main class="single-column">
@@ -69,15 +69,27 @@
             <input type="date" id="date-reported" name="report_date" required>
 
             <label for="text-website">
-                <h2>Report Website*</h2>
+                <h2>Report Website</h2>
             </label>
-            <input type="url" id="text-website" name="report_website" required>
+            <input type="url" id="text-website" name="report_website">
 
             <label for="number-cases">
-                <h2>Number of New Cases*</h2>
+                <h2>Number of Cases*</h2>
             </label>
-            <input type="number" id="number-cases" name="number_of_new_cases" min="0" required>
+            <input type="number" id="number-cases" name="number_of_cases" min="0" required>
 
+            <div class="spacer"></div>
+            <details>
+                <summary>Other comments</summary>
+                <label for="text-comments">
+                    Please fill out the following section only if you want to report something other
+                    than confirmed cases or if you have any other comments about your school. You
+                    can also send us an email at
+                    <a href="mailto:contact@thecovidmonitor.com">contact@thecovidmonitor.com</a>.
+                    We will keep your information and identity confidential.
+                </label>
+                <textarea id="text-comments" name="report_comments"></textarea>
+            </details>
             <div class="spacer"></div>
 
             <input type="button" id="submit-form" value="Submit Report" style="text-transform: uppercase; font-weight: bold; border: 3px solid var(--theme-primary); padding: 4px;">
