@@ -1,0 +1,94 @@
+<!DOCTYPE html><html><!-- HTML page head --><head>
+    <!-- HTML metadata -->
+    <meta charset="UTF-8">
+    <title>The COVID Monitor Report Form</title>
+    <meta name="description" content="Report of cases for K-12 school districts">
+    <link rel="icon" type="image/png" href="./static/logo-64.png">
+
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="The COVID Monitor Report Form">
+
+    <!-- Homescreen icons -->
+    <link rel="apple-touch-icon" href="./static/icon-64x64.png">
+    <link rel="apple-touch-icon" sizes="64x64" href="./static/icon-64x64.png">
+    <link rel="apple-touch-icon" sizes="128x128" href="./static/icon-128x128.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="./static/icon-512x512.png">
+
+    <!-- Capabilities-related metadata -->
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+
+    <!-- JQuery and plugins -->
+    <script type="text/javascript" src="./third_party/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="./third_party/jquery-csv/src/jquery.csv.min.js"></script>
+    <script type="text/javascript" src="./third_party/jquery-ui-dist/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="./static/jquery.ui.combobox.min.js"></script>
+    <link rel="stylesheet" href="./third_party/jquery-ui-dist/jquery-ui.min.css">
+
+    <!-- MomentJS -->
+    <script type="text/javascript" src="./third_party/moment/min/moment.min.js"></script>
+
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="./third_party/picnic/picnic.min.css">
+    <link rel="stylesheet" href="./static/styles.min.css">
+
+    <!-- Polyfills, custom functions and constants -->
+    <script type="text/javascript" src="./static/polyfills.min.js"></script>
+
+
+<!-- Function definitions -->
+<script>function corsUrl(e){return`https://cors-anywhere.herokuapp.com/${e}`}function populateStates(e,t){const o={};e.forEach(e=>{o[e.STATECODE]=e.STATENAME}),t.html(['<option value="" disabled>Select State</option>'].concat(Object.keys(o).map(e=>`<option value="${e}">${o[e]}</option>`))),t.on("change",o=>{populateDistricts(e,$("#select-district"),t.val())}),t.val(null),t.removeAttr("disabled")}function populateDistricts(e,t,o){const n={};e.filter(e=>e.STATECODE===o).forEach(e=>{n[e.GEOID]=e.NAME}),t.html(['<option value="" disabled>Select School District</option>'].concat(Object.keys(n).map(e=>`<option value="${e}">${n[e]}</option>`))),t.on("change",e=>{}),t.val(null),t.removeAttr("disabled")}function validateForm(e,t){const o=[].filter.call($("#report-form").children(),e=>$(e).attr("name")).reduce((e,t)=>Object.assign({[$(t).attr("name")]:t},e),{});console.log(o);const n=Object.keys(o).reverse().filter(e=>$(o[e]).attr("required"));console.log(n);for(let e of n){const n=$(o[e]).val();if(null==n||""===n)return t(`Value for ${e.replace(/_/g," ")} cannot be null`)}const r=Number.parseInt($(o.number_of_new_cases).val());return Number.isNaN(r)||r<0?t(`Value for ${"number_of_new_cases".replace(/_/g," ")} must be a positive number`):e(Object.keys(o).reverse().reduce((e,t)=>Object.assign({[t]:$(o[t]).val()},e),{}))}</script>
+
+</head><body>
+    <main class="single-column">
+
+        <form id="report-form">
+            <label for="select-state">
+                <h2>Select State*</h2>
+            </label>
+            <select id="select-state" name="state" required disabled>
+                <option value disabled>Select State</option>
+            </select>
+
+            <label for="select-district">
+                <h2>Select District*</h2>
+            </label>
+            <select id="select-district" name="school_district" required disabled>
+                <option value disabled>Select School District</option>
+            </select>
+
+            <label for="text-school">
+                <h2>School Name</h2>
+            </label>
+            <input type="text" id="text-school" name="school_name" hint="Name of the school">
+
+            <label for="date-reported">
+                <h2>Report Date*</h2>
+            </label>
+            <input type="date" id="date-reported" name="report_date" required>
+
+            <label for="text-website">
+                <h2>Report Website*</h2>
+            </label>
+            <input type="url" id="text-website" name="report_website" required>
+
+            <label for="number-cases">
+                <h2>Number of New Cases*</h2>
+            </label>
+            <input type="number" id="number-cases" name="number_of_new_cases" min="0" required>
+
+            <div class="spacer"></div>
+
+            <input type="button" id="submit-form" value="Submit Report" style="text-transform: uppercase; font-weight: bold; border: 3px solid var(--theme-primary); padding: 4px;">
+        </form>
+    </main>
+
+    <script>const csvUrl="https://docs.google.com/spreadsheets/d/e/2PACX-1vSfTEYXDiLrEw42lUDnhu7peCxqjx_9I-8zMBmpa1QdlmWCJGA1R8W21vNZUrAuu8HoTynXk7eo5Obg/pub?gid=1819798616&single=true&output=csv";$.ajax({url:corsUrl(csvUrl),type:"GET",success:e=>{const o=$.csv.toObjects(e);populateStates(o,$("#select-state"))}}),$("#date-reported").datepicker({dateFormat:"yy-mm-dd"}),$("#submit-form").on("click",e=>{try{validateForm(e=>{console.log(e),$.ajax({url:"https://script.google.com/macros/s/AKfycbxUSKJolh7_0xK0x1fMD_B0mWiA-7TVcEtHAD0j0RbbSKrf-mU/exec",type:"POST",data:e,success:e=>{console.log(e),alert("Success: Thank you for your report!")},error:e=>{console.error(e)}})},e=>{console.error(e),alert(e)})}catch(e){console.error(e),alert(e)}});</script>
+
+    <!-- Load analytics at the end of the page -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-103644138-4"></script>
+<script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","UA-103644138-4");</script>
+
+
+</body></html>
