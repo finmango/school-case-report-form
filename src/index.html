@@ -52,6 +52,16 @@
         selectElement.removeAttr('disabled');
     }
 
+    function disableForm(submitElement) {
+        submitElement.attr('disabled', 1);
+        submitElement.val('Submitting...');
+    }
+
+    function enableForm(submitElement) {
+        submitElement.removeAttr('disabled');
+        submitElement.val('Submit Report');
+    }
+
     // Validate the form to ensure all fields have valid values
     function validateForm(onSuccess, onError) {
         const formElements = [].filter.call(
@@ -60,13 +70,10 @@
             return Object.assign({ [$(elem).attr('name')]: elem }, dict);
         }, {});
 
-        console.log(formElements);
-
         // Validate mandatory fields are not null
         const requiredElements = Object.keys(formElements).reverse().filter(key => {
             return $(formElements[key]).attr('required')
         });
-        console.log(requiredElements);
         for (let name of requiredElements) {
             const val = $(formElements[name]).val();
             if (val === undefined || val === null || val === "") {
@@ -152,27 +159,35 @@
 
         // Listen to submit button
         $('#submit-form').on('click', event => {
+
+            // Temporarily disable form
+            const submitElement = $('#submit-form');
+            disableForm(submitElement);
+
             try {
+
                 validateForm(data => {
                     const formUrl = 'https://script.google.com/macros/s/AKfycbxUSKJolh7_0xK0x1fMD_B0mWiA-7TVcEtHAD0j0RbbSKrf-mU/exec';
-                    console.log(data);
                     $.ajax({
                         url: formUrl,
                         type: 'POST',
                         data: data,
                         success: res => {
-                            console.log(res);
-                            alert('Success: Thank you for your report!')
+                            submitElement.val('Form Submitted');
+                            alert('Success: Thank you for your report!');
                         },
                         error: err => {
+                            enableForm(submitElement);
                             console.error(err);
                         }
                     });
                 }, err => {
+                    enableForm(submitElement);
                     console.error(err);
                     alert(err);
                 });
             } catch (err) {
+                enableForm(submitElement);
                 console.error(err);
                 alert(err);
             }
