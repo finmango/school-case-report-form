@@ -1,0 +1,202 @@
+<form id="report-form">
+    <label for="select-state">
+        <h2>Select State*</h2>
+    </label>
+    <select id="select-state" name="state" required disabled>
+        <option value="" disabled>Select State</option>
+    </select>
+
+    <label for="select-district">
+        <h2>Select District*</h2>
+    </label>
+    <select id="select-district" name="school_district" required disabled>
+        <option value="" disabled>Select School District</option>
+    </select>
+
+    <label for="text-school">
+        <h2>School Name</h2>
+    </label>
+    <input type="text" id="text-school" name="school_name" hint="Name of the school" />
+
+    <label for="date-reported">
+        <h2>Report Date*</h2>
+    </label>
+    <input type="date" id="date-reported" name="report_date" required />
+
+    <label for="text-website">
+        <h2>Report Website</h2>
+    </label>
+    <input type="url" id="text-website" name="report_website" />
+
+    <label for="number-cases">
+        <h2>Number of Cases*</h2>
+    </label>
+    <input type="number" id="number-cases" name="number_of_cases" min="0" required />
+
+    <div class="spacer"></div>
+    <details>
+        <summary>Other comments</summary>
+        <label for="text-comments">
+            Please fill out the following section only if you want to report something other
+            than confirmed cases or if you have any other comments about your school. You
+            can also send us an email at
+            <a href="mailto:cases@thecovidmonitor.com">cases@thecovidmonitor.com</a>.
+            We will keep your information and identity confidential.
+        </label>
+        <textarea id="text-comments" name="report_comments"></textarea>
+    </details>
+    <div class="spacer"></div>
+
+    <input type="button" id="submit-form" value="Submit Report" class="uppercase"
+        style="font-weight: bold; border: 3px solid var(--theme-primary); padding: 4px;" />
+</form>
+
+<!-- Function definitions -->
+<script>
+    // Populate the state choice with the unique values from the districts
+    function populateStates(districts, selectElement) {
+        const labels = {};
+        districts.forEach(row => {
+            labels[row.STATECODE] = row.STATENAME;
+        });
+
+        selectElement.html([
+            `<option value="" disabled>Select State</option>`
+        ].concat(Object.keys(labels).map(code => {
+            return `<option value="${code}">${labels[code]}</option>`;
+        })));
+        selectElement.on('change', event => {
+            populateDistricts(districts, $('#select-district'), selectElement.val());
+        });
+
+        // Enable selector
+        selectElement.val(null);
+        selectElement.removeAttr('disabled');
+    }
+
+    // Populate the districts given a selected state
+    function populateDistricts(districts, selectElement, stateCode) {
+        const labels = {};
+        districts.filter(row => row.STATECODE === stateCode).forEach(row => {
+            labels[row.GEOID] = row.NAME;
+        });
+
+        selectElement.html([
+            `<option value="" disabled>Select School District</option>`
+        ].concat(Object.keys(labels).map(code => {
+            return `<option value="${code}">${labels[code]}</option>`;
+        })));
+        selectElement.on('change', event => {
+            // TODO
+        });
+
+        // Enable selector
+        selectElement.val(null);
+        selectElement.removeAttr('disabled');
+    }
+
+    function disableForm(submitElement) {
+        submitElement.attr('disabled', 1);
+        submitElement.val('Submitting...');
+    }
+
+    function enableForm(submitElement) {
+        submitElement.removeAttr('disabled');
+        submitElement.val('Submit Report');
+    }
+
+    // Validate the form to ensure all fields have valid values
+    function validateForm(onSuccess, onError) {
+        const formTags = ['input', 'select', 'textarea'];
+        const formElements = [].filter.call(
+            $(formTags.map(tag => `#report-form ${tag}`).join(', ')), elem => $(elem).attr('name')
+        ).reduce((dict, elem) => {
+            return Object.assign({ [$(elem).attr('name')]: elem }, dict);
+        }, {});
+
+        // Validate mandatory fields are not null
+        const requiredElements = Object.keys(formElements).reverse().filter(key => {
+            return $(formElements[key]).attr('required')
+        });
+        for (let name of requiredElements) {
+            const val = $(formElements[name]).val();
+            if (val === undefined || val === null || val === "") {
+                return onError(`Value for ${name.replace(/_/g, ' ')} cannot be null`);
+            }
+        }
+
+        // Either website or comments must be filled out
+        const websiteName = 'report_website';
+        const commentName = 'report_comments';
+        const websiteValue = $(formElements[websiteName]).val();
+        const commentValue = $(formElements[commentName]).val();
+        if (!websiteValue && !commentValue) {
+            return onError(`Either ${websiteName.replace(/_/g, ' ')} or ${commentName.replace(/_/g, ' ')} must be filled out`);
+        }
+
+        // Number of cases must be a positive integer
+        const newCasesName = 'number_of_cases';
+        const newCasesValue = Number.parseInt($(formElements[newCasesName]).val());
+        if (Number.isNaN(newCasesValue) || newCasesValue < 0) {
+            return onError(`Value for ${newCasesName.replace(/_/g, ' ')} must be a positive number`);
+        }
+
+        // Callback the success handler with our form data
+        return onSuccess(Object.keys(formElements).reverse().reduce((dict, name) => {
+            return Object.assign({ [name]: $(formElements[name]).val() }, dict);
+        }, {}));
+    }
+</script>
+
+<script>
+    // Load districts
+    $.ajax({
+        url: '{{root}}/static/school_districts.csv',
+        type: 'GET',
+        success: data => {
+            const districts = $.csv.toObjects(data);
+            populateStates(districts, $('#select-state'));
+        }
+    });
+
+    // Apply UI date picker
+    $("#date-reported").datepicker({
+        dateFormat: "yy-mm-dd",
+    });
+
+    // Listen to submit button
+    $('#submit-form').on('click', event => {
+
+        // Temporarily disable form
+        const submitElement = $('#submit-form');
+        disableForm(submitElement);
+
+        try {
+
+            validateForm(data => {
+                const formUrl = 'https://script.google.com/macros/s/AKfycbxUSKJolh7_0xK0x1fMD_B0mWiA-7TVcEtHAD0j0RbbSKrf-mU/exec';
+                $.ajax({
+                    url: formUrl,
+                    type: 'POST',
+                    data: data,
+                    success: res => {
+                        submitElement.val('Form Submitted');
+                        alert('Success: Thank you for your report!');
+                    },
+                    error: err => {
+                        enableForm(submitElement);
+                        console.error(err);
+                    }
+                });
+            }, err => {
+                enableForm(submitElement);
+                console.error(err);
+                alert(err);
+            });
+        } catch (err) {
+            enableForm(submitElement);
+            console.error(err);
+            alert(err);
+        }
+    });
+</script>
